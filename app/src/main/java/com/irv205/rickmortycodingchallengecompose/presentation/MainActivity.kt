@@ -5,16 +5,12 @@
  * Activity principal de la aplicación. Es el único Activity en esta app (Single Activity Architecture).
  * Aquí se configura el tema, se habilita edge-to-edge y se monta la UI con Jetpack Compose.
  * 
- * Arquitectura: Single Activity + Navigation Compose
- * - En lugar de múltiples Activities, usamos una sola Activity y navegamos entre Composables
- *   mediante Navigation Compose. Esto simplifica el ciclo de vida y la gestión del estado.
+ * Responsabilidades:
+ * - Configurar tema de la aplicación
+ * - Habilitar modo edge-to-edge
+ * - Inicializar el grafo de navegación
  * 
- * Conceptos clave:
- * - @AndroidEntryPoint: Permite a Hilt inyectar ViewModels y dependencias en esta Activity.
- * - enableEdgeToEdge(): Permite que el contenido se dibuje detrás de las barras del sistema (status bar, navigation bar).
- * - setContent { }: Función de Jetpack Compose para establecer la UI declarativa.
- * - NavHost + rememberNavController: Sistema de navegación type-safe con Kotlin Serialization.
- * - toRoute<T>(): Extrae los argumentos de navegación de forma segura con rutas serializables.
+ * La navegación ha sido separada a [AppNavGraph] siguiendo el principio de responsabilidad única.
  */
 package com.irv205.rickmortycodingchallengecompose.presentation
 
@@ -28,13 +24,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.toRoute
-import com.irv205.rickmortycodingchallengecompose.presentation.character.detail.CharacterDetailScreen
-import com.irv205.rickmortycodingchallengecompose.presentation.character.home.CharacterListScreen
-import com.irv205.rickmortycodingchallengecompose.presentation.navigation.Screen
+import com.irv205.rickmortycodingchallengecompose.presentation.navigation.AppNavGraph
 import com.irv205.rickmortycodingchallengecompose.ui.theme.RickMortyCodingChallengeComposeTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -56,7 +47,6 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    // Punto de entrada a la navegación de la app
                     RickMortyApp()
                 }
             }
@@ -65,45 +55,13 @@ class MainActivity : ComponentActivity() {
 }
 
 /**
- * Composable raíz que configura la navegación de la aplicación.
- * 
- * Usa Navigation Compose con rutas type-safe (definidas con @Serializable).
- * - startDestination: Pantalla inicial al abrir la app.
- * - NavHost: Contenedor que muestra el Composable correspondiente a la ruta actual.
- * 
- * Navegación:
- * - CharacterList -> CharacterDetail: Pasa characterId como argumento de ruta
- * - CharacterDetail -> back: Regresa a la pantalla anterior con popBackStack()
+ * Composable raíz de la aplicación.
+ * Se encarga únicamente de crear el NavController y delegar la navegación al AppNavGraph.
  */
 @Composable
 fun RickMortyApp() {
-    // Controlador de navegación - recuerda su estado entre recomposiciones
     val navController = rememberNavController()
-    
-    NavHost(
-        navController = navController,
-        startDestination = Screen.CharacterList
-    ) {
-        // Ruta para la lista de personajes
-        composable<Screen.CharacterList> {
-            CharacterListScreen(
-                onCharacterClick = { characterId ->
-                    // Navega a la pantalla de detalle pasando el ID del personaje
-                    navController.navigate(Screen.CharacterDetail(characterId))
-                }
-            )
-        }
-        
-        // Ruta para el detalle de un personaje
-        composable<Screen.CharacterDetail> { backStackEntry ->
-            // Extrae los argumentos de la ruta de forma type-safe
-            val detail = backStackEntry.toRoute<Screen.CharacterDetail>()
-            CharacterDetailScreen(
-                characterId = detail.characterId,
-                onBackClick = { navController.popBackStack() }
-            )
-        }
-    }
+    AppNavGraph(navController = navController)
 }
 
 /**

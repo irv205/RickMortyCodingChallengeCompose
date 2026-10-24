@@ -3,18 +3,7 @@
  * 
  * Propósito:
  * Pantalla de detalle que muestra información completa de un personaje seleccionado.
- * 
- * Componentes:
- * - Scaffold con TopAppBar y botón de regreso
- * - Column con scroll vertical para mostrar toda la información
- * - AsyncImage para mostrar la imagen del personaje
- * - Card para agrupar la información detallada
- * - DetailRow: Composable auxiliar para mostrar etiqueta-valor
- * - LaunchedEffect: Carga el personaje cuando llega characterId
- * 
- * Navegación:
- * - Recibe characterId como parámetro
- * - Botón "Back" llama onBackClick() para regresar con popBackStack()
+ * Sigue el patrón State-Action: sin lógica de negocio en la UI, sin operadores null-unsafe.
  */
 package com.irv205.rickmortycodingchallengecompose.presentation.character.detail
 
@@ -59,31 +48,46 @@ import com.irv205.rickmortycodingchallengecompose.ui.theme.RickMortyCodingChalle
 
 /**
  * Pantalla de detalle de personaje.
- * 
- * @param characterId ID del personaje a mostrar
- * @param onBackClick Callback para regresar a la pantalla anterior
- * @param viewModel ViewModel inyectado por Hilt
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CharacterDetailScreen(
     characterId: Int,
-    onBackClick: () -> Unit,
+    onNavigateBack: () -> Unit,
     viewModel: CharacterDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    // Carga el personaje cuando cambia characterId
     LaunchedEffect(characterId) {
-        viewModel.loadCharacter(characterId)
+        viewModel.onAction(CharacterDetailAction.LoadCharacter(characterId))
     }
 
+    CharacterDetailContent(
+        state = uiState,
+        onAction = { action ->
+            when (action) {
+                is CharacterDetailAction.NavigateBack -> onNavigateBack()
+                else -> viewModel.onAction(action)
+            }
+        }
+    )
+}
+
+/**
+ * Composable puramente presentacional para el detalle de personaje.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CharacterDetailContent(
+    state: CharacterDetailState,
+    onAction: (CharacterDetailAction) -> Unit
+) {
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Character Detail") },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
+                    IconButton(onClick = { onAction(CharacterDetailAction.NavigateBack) }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back"
@@ -99,15 +103,22 @@ fun CharacterDetailScreen(
                 .padding(paddingValues)
         ) {
             when {
-                // Estado de carga
-                uiState.isLoading -> {
+                state.isLoading -> {
                     CircularProgressIndicator(
                         modifier = Modifier.align(Alignment.Center)
                     )
                 }
-                // Estado con datos
-                uiState.character != null -> {
-                    val character = uiState.character!!
+
+                state.hasError && !state.errorMessage.isNullOrBlank() -> {
+                    Text(
+                        text = state.errorMessage,
+                        modifier = Modifier.align(Alignment.Center),
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+
+                state.character != null -> {
+                    val character = state.character
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
@@ -116,7 +127,6 @@ fun CharacterDetailScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        // Imagen del personaje
                         AsyncImage(
                             model = character.image,
                             contentDescription = character.name,
@@ -127,14 +137,12 @@ fun CharacterDetailScreen(
                             contentScale = ContentScale.Crop
                         )
 
-                        // Nombre del personaje
                         Text(
                             text = character.name,
                             style = MaterialTheme.typography.headlineMedium,
                             fontWeight = FontWeight.Bold
                         )
 
-                        // Tarjeta con información detallada
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
@@ -146,24 +154,19 @@ fun CharacterDetailScreen(
                                     .padding(16.dp),
                                 verticalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                DetailRow("Status", character.status)
-                                DetailRow("Species", character.species)
-                                DetailRow("Type", if (character.type.isEmpty()) "N/A" else character.type)
-                                DetailRow("Gender", character.gender)
-                                DetailRow("Origin", character.originName)
-                                DetailRow("Location", character.locationName)
-                                DetailRow("Created", character.created)
+                                DetailRow(label = "Status", value = character.status)
+                                DetailRow(label = "Species", value = character.species)
+                                DetailRow(
+                                    label = "Type",
+                                    value = if (character.type.isBlank()) "N/A" else character.type
+                                )
+                                DetailRow(label = "Gender", value = character.gender)
+                                DetailRow(label = "Origin", value = character.originName)
+                                DetailRow(label = "Location", value = character.locationName)
+                                DetailRow(label = "Created", value = character.created)
                             }
                         }
                     }
-                }
-                // Estado de error
-                uiState.error != null -> {
-                    Text(
-                        text = uiState.error!!,
-                        modifier = Modifier.align(Alignment.Center),
-                        style = MaterialTheme.typography.bodyLarge
-                    )
                 }
             }
         }

@@ -3,19 +3,13 @@
  * 
  * Propósito:
  * Pantalla principal que muestra la lista de personajes con paginación infinita.
+ * Sigue el patrón State-Action: recibe estado, emite acciones al ViewModel.
  * 
- * Componentes clave:
- * - Scaffold: Estructura base con TopAppBar, contenido, SnackbarHost
- * - LazyColumn: Lista eficiente que solo renderiza items visibles (virtualización)
- * - rememberLazyListState: Controla el estado de scroll de LazyColumn
- * - snapshotFlow: Observa cambios en el estado de scroll
- * - collectAsStateWithLifecycle: Recolecta StateFlow respetando ciclo de vida (evita leaks)
- * - LaunchedEffect: Ejecuta código cuando cambian keys (error, listState)
- * - SnackbarHost: Muestra mensajes de error al usuario
- * 
- * Paginación infinita:
- * Se detecta cuándo el usuario llega cerca del final usando snapshotFlow sobre layoutInfo.
- * Cuando lastVisible >= totalItems - 3, se dispara loadMore() automáticamente.
+ * Principios:
+ * - UI sin lógica de negocio
+ * - Sin uso de operadores null-unsafe (!!)
+ * - Unidirectional Data Flow
+ * - Componentes Composables puros donde es posible
  */
 package com.irv205.rickmortycodingchallengecompose.presentation.character.home
 
@@ -50,33 +44,49 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 
 /**
  * Pantalla de lista de personajes.
- * 
- * @param onCharacterClick Callback cuando se selecciona un personaje, recibe characterId
- * @param viewModel ViewModel inyectado por Hilt (con hiltViewModel())
+ * Solo se encarga de renderizar UI y emitir acciones.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CharacterListScreen(
-    onCharacterClick: (Int) -> Unit,
+    onNavigateToDetail: (Int) -> Unit,
     viewModel: CharacterListViewModel = hiltViewModel()
 ) {
-    // Recolecta estado UI respetando ciclo de vida
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    
-    // Estado para controlar scroll de LazyColumn
+    CharacterListContent(
+        state = uiState,
+        onAction = { action ->
+            when (action) {
+                is CharacterListAction.OnCharacterClicked -> onNavigateToDetail(action.characterId)
+                else -> viewModel.onAction(action)
+            }
+        }
+    )
+}
+
+/**
+ * Composable puramente presentacional para la lista de personajes.
+ * No tiene dependencias con ViewModel, facilitando testing y previews.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CharacterListContent(
+    state: CharacterListState,
+    onAction: (CharacterListAction) -> Unit
+) {
     val listState = rememberLazyListState()
-    
-    // Estado para mostrar Snackbars
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Muestra error en Snackbar cuando cambia
-    LaunchedEffect(uiState.error) {
-        uiState.error?.let { message ->
+    // Mostrar error en Snackbar cuando exista
+    LaunchedEffect(state.hasError, state.errorMessage) {
+        val message = state.errorMessage
+        if (state.hasError && !message.isNullOrBlank()) {
             snackbarHostState.showSnackbar(message)
+            onAction(CharacterListAction.ClearError)
         }
     }
 
-    // Detecta scroll para paginación infinita
+    // Detectar scroll cerca del final para paginación infinita
     LaunchedEffect(listState) {
         snapshotFlow {
             val layoutInfo = listState.layoutInfo
@@ -84,12 +94,14 @@ fun CharacterListScreen(
             val lastVisibleItem = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
             Pair(lastVisibleItem, totalItems)
         }
-            // Solo emite cuando hay cambio real
             .distinctUntilChanged()
             .collect { (lastVisible, total) ->
-                if (total > 0 && lastVisible >= total - 3) {
-                    viewModel.loadMore()
-                }
+                onAction(
+                    CharacterListAction.OnScrollNearEnd(
+                        lastVisibleItemIndex = lastVisible,
+                        totalItemsCount = total
+                    )
+                )
             }
     }
 
@@ -107,29 +119,30 @@ fun CharacterListScreen(
                 .padding(paddingValues)
         ) {
             when {
-                // Mostrar loading solo en carga inicial sin datos
-                uiState.isLoading && uiState.characters.isEmpty() -> {
+                state.isLoading && state.characters.isEmpty() -> {
                     CircularProgressIndicator(
                         modifier = Modifier.align(Alignment.Center)
                     )
                 }
-                else -> {
+
+                state.characters.isNotEmpty() -> {
                     LazyColumn(
                         state = listState,
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        // Items de personajes con key para mejor rendimiento
                         items(
-                            items = uiState.characters,
-                            key = { it.id }
+                            items = state.characters,
+                            key = { character -> character.id }
                         ) { character ->
                             CharacterListItem(
                                 character = character,
-                                onClick = { onCharacterClick(character.id) }
+                                onClick = {
+                                    onAction(CharacterListAction.OnCharacterClicked(character.id))
+                                }
                             )
                         }
-                        // Indicador de carga al hacer scroll infinito
-                        if (uiState.isLoadingMore) {
+
+                        if (state.isLoadingMore) {
                             item {
                                 Box(
                                     modifier = Modifier
