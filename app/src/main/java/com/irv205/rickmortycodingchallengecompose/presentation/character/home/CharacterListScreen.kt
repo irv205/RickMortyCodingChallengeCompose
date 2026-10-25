@@ -162,91 +162,99 @@ private fun CharacterListContent(
 }
 
 /**
- * Preview con datos de ejemplo
+ * Preview con datos de ejemplo usando el patrón State-Action
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview(showBackground = true)
 @Composable
 fun CharacterListScreenPreview() {
     RickMortyCodingChallengeComposeTheme {
-        val characters = listOf(
-            Character(
-                id = 1,
-                name = "Rick Sanchez",
-                status = "Alive",
-                species = "Human",
-                type = "",
-                gender = "Male",
-                originName = "Earth (C-137)",
-                locationName = "Citadel of Ricks",
-                image = "https://rickandmortyapi.com/api/character/avatar/1.jpeg",
-                created = "2017-11-04T18:48:46.250Z"
+        CharacterListContent(
+            state = CharacterListState(
+                characters = listOf(
+                    Character(
+                        id = 1,
+                        name = "Rick Sanchez",
+                        status = "Alive",
+                        species = "Human",
+                        type = "",
+                        gender = "Male",
+                        originName = "Earth (C-137)",
+                        locationName = "Citadel of Ricks",
+                        image = "https://rickandmortyapi.com/api/character/avatar/1.jpeg",
+                        created = "2017-11-04T18:48:46.250Z"
+                    ),
+                    Character(
+                        id = 2,
+                        name = "Morty Smith",
+                        status = "Alive",
+                        species = "Human",
+                        type = "",
+                        gender = "Male",
+                        originName = "unknown",
+                        locationName = "Citadel of Ricks",
+                        image = "https://rickandmortyapi.com/api/character/avatar/2.jpeg",
+                        created = "2017-11-04T18:50:21.651Z"
+                    )
+                ),
+                isLoading = false,
+                isLoadingMore = false,
+                hasError = false,
+                errorMessage = null
             ),
-            Character(
-                id = 2,
-                name = "Morty Smith",
-                status = "Alive",
-                species = "Human",
-                type = "",
-                gender = "Male",
-                originName = "unknown",
-                locationName = "Citadel of Ricks",
-                image = "https://rickandmortyapi.com/api/character/avatar/2.jpeg",
-                created = "2017-11-04T18:50:21.651Z"
-            )
+            onAction = {}
         )
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = { Text("Rick & Morty") }
-                )
-            }
-        ) { paddingValues ->
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-            ) {
-                LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    items(
-                        items = characters,
-                        key = { it.id }
-                    ) { character ->
-                        CharacterListItem(
-                            character = character,
-                            onClick = {}
-                        )
-                    }
-                }
-            }
-        }
     }
 }
 
 /**
- * Preview en estado de carga
+ * Preview en estado de carga usando el patrón State-Action
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview(showBackground = true, name = "Loading")
 @Composable
 fun CharacterListScreenLoadingPreview() {
     RickMortyCodingChallengeComposeTheme {
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = { Text("Rick & Morty") }
-                )
-            }
-        ) { paddingValues ->
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-            ) {
-                CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            }
-        }
+        CharacterListContent(
+            state = CharacterListState(
+                characters = emptyList(),
+                isLoading = true,
+                isLoadingMore = false,
+                hasError = false,
+                errorMessage = null
+            ),
+            onAction = {}
+        )
+    }
+}
+
+/**
+ * Preview en estado de carga de más elementos usando el patrón State-Action
+ */
+@Preview(showBackground = true, name = "Loading More")
+@Composable
+fun CharacterListScreenLoadingMorePreview() {
+    RickMortyCodingChallengeComposeTheme {
+        CharacterListContent(
+            state = CharacterListState(
+                characters = listOf(
+                    Character(
+                        id = 1,
+                        name = "Rick Sanchez",
+                        status = "Alive",
+                        species = "Human",
+                        type = "",
+                        gender = "Male",
+                        originName = "Earth (C-137)",
+                        locationName = "Citadel of Ricks",
+                        image = "https://rickandmortyapi.com/api/character/avatar/1.jpeg",
+                        created = "2017-11-04T18:48:46.250Z"
+                    )
+                ),
+                isLoading = false,
+                isLoadingMore = true,
+                hasError = false,
+                errorMessage = null
+            ),
+            onAction = {}
+        )
     }
 }

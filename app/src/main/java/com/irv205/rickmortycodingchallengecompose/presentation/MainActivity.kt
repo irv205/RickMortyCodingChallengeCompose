@@ -63,19 +63,3 @@ fun RickMortyApp() {
     val navController = rememberNavController()
     AppNavGraph(navController = navController)
 }
-
-/**
- * Preview para visualizar RickMortyApp en Android Studio sin ejecutar la app.
- */
-@Preview(showBackground = true)
-@Composable
-fun RickMortyAppPreview() {
-    RickMortyCodingChallengeComposeTheme {
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background
-        ) {
-            RickMortyApp()
-        }
-    }
-}
