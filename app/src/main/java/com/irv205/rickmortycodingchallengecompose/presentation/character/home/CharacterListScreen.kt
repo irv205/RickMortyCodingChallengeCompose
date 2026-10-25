@@ -77,6 +77,10 @@ private fun CharacterListContent(
     val listState = rememberLazyListState()
     val snackbarHostState = remember { SnackbarHostState() }
 
+    LaunchedEffect(Unit) {
+        onAction(CharacterListAction.LoadCharacters)
+    }
+
     // Mostrar error en Snackbar cuando exista
     LaunchedEffect(state.hasError, state.errorMessage) {
         val message = state.errorMessage
@@ -197,7 +201,7 @@ fun CharacterListScreenPreview() {
     RickMortyCodingChallengeComposeTheme {
         CharacterListContent(
             state = CharacterListState(
-                characters = emptyList(),
+                characters = characters,
                 isLoading = true,
                 isLoadingMore = false,
                 hasError = false,

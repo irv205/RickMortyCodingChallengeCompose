@@ -201,25 +201,18 @@ fun DetailRow(
     }
 }
 
-/**
- * Preview en estado de carga usando el patrón State-Action
- */
-@Preview(showBackground = true, name = "Loading")
-@Composable
-fun CharacterDetailScreenLoadingPreview() {
-    RickMortyCodingChallengeComposeTheme {
-        CharacterDetailContent(
-            state = CharacterDetailState(
-                character = null,
-                isLoading = true,
-                hasError = false,
-                errorMessage = null
-            ),
-            onAction = {}
-        )
-    }
-}
-
+val character = Character(
+    id = 1,
+    name = "Rick Sanchez",
+    status = "Alive",
+    species = "Human",
+    type = "",
+    gender = "Male",
+    originName = "Earth (C-137)",
+    locationName = "Citadel of Ricks",
+    image = "https://rickandmortyapi.com/api/character/avatar/1.jpeg",
+    created = "2017-11-04T18:48:46.250Z"
+)
 /**
  * Preview con datos de personaje usando el patrón State-Action
  */
@@ -229,53 +222,12 @@ fun CharacterDetailScreenContentPreview() {
     RickMortyCodingChallengeComposeTheme {
         CharacterDetailContent(
             state = CharacterDetailState(
-                character = Character(
-                    id = 1,
-                    name = "Rick Sanchez",
-                    status = "Alive",
-                    species = "Human",
-                    type = "",
-                    gender = "Male",
-                    originName = "Earth (C-137)",
-                    locationName = "Citadel of Ricks",
-                    image = "https://rickandmortyapi.com/api/character/avatar/1.jpeg",
-                    created = "2017-11-04T18:48:46.250Z"
-                ),
+                character = character,
                 isLoading = false,
                 hasError = false,
-                errorMessage = null
+                errorMessage = "Error"
             ),
             onAction = {}
         )
-    }
-}
-
-/**
- * Preview en estado de error usando el patrón State-Action
- */
-@Preview(showBackground = true, name = "Error")
-@Composable
-fun CharacterDetailScreenErrorPreview() {
-    RickMortyCodingChallengeComposeTheme {
-        CharacterDetailContent(
-            state = CharacterDetailState(
-                character = null,
-                isLoading = false,
-                hasError = true,
-                errorMessage = "Something went wrong"
-            ),
-            onAction = {}
-        )
-    }
-}
-
-/**
- * Preview de DetailRow
- */
-@Preview(showBackground = true)
-@Composable
-fun DetailRowPreview() {
-    RickMortyCodingChallengeComposeTheme {
-        DetailRow(label = "Status", value = "Alive")
     }
 }

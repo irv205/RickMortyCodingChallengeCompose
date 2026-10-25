@@ -44,10 +44,6 @@ class CharacterListViewModel @Inject constructor(
     // URL de la siguiente página para paginación
     private var nextPageUrl: String? = null
 
-    init {
-        onAction(CharacterListAction.LoadCharacters)
-    }
-
     /**
      * Punto único de entrada para todas las acciones de la UI.
      * Procesa cada acción y actualiza el estado correspondiente.
