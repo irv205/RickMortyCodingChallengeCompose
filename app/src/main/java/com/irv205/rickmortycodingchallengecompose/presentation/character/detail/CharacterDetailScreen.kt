@@ -202,38 +202,70 @@ fun DetailRow(
 }
 
 /**
- * Preview en estado de carga
+ * Preview en estado de carga usando el patrón State-Action
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview(showBackground = true, name = "Loading")
 @Composable
 fun CharacterDetailScreenLoadingPreview() {
     RickMortyCodingChallengeComposeTheme {
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = { Text("Character Detail") },
-                    navigationIcon = {
-                        IconButton(onClick = {}) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back"
-                            )
-                        }
-                    }
-                )
-            }
-        ) { paddingValues ->
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-            ) {
-                CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            }
-        }
+        CharacterDetailContent(
+            state = CharacterDetailState(
+                character = null,
+                isLoading = true,
+                hasError = false,
+                errorMessage = null
+            ),
+            onAction = {}
+        )
+    }
+}
+
+/**
+ * Preview con datos de personaje usando el patrón State-Action
+ */
+@Preview(showBackground = true, name = "Content")
+@Composable
+fun CharacterDetailScreenContentPreview() {
+    RickMortyCodingChallengeComposeTheme {
+        CharacterDetailContent(
+            state = CharacterDetailState(
+                character = Character(
+                    id = 1,
+                    name = "Rick Sanchez",
+                    status = "Alive",
+                    species = "Human",
+                    type = "",
+                    gender = "Male",
+                    originName = "Earth (C-137)",
+                    locationName = "Citadel of Ricks",
+                    image = "https://rickandmortyapi.com/api/character/avatar/1.jpeg",
+                    created = "2017-11-04T18:48:46.250Z"
+                ),
+                isLoading = false,
+                hasError = false,
+                errorMessage = null
+            ),
+            onAction = {}
+        )
+    }
+}
+
+/**
+ * Preview en estado de error usando el patrón State-Action
+ */
+@Preview(showBackground = true, name = "Error")
+@Composable
+fun CharacterDetailScreenErrorPreview() {
+    RickMortyCodingChallengeComposeTheme {
+        CharacterDetailContent(
+            state = CharacterDetailState(
+                character = null,
+                isLoading = false,
+                hasError = true,
+                errorMessage = "Something went wrong"
+            ),
+            onAction = {}
+        )
     }
 }
 
